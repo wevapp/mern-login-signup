@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -10,6 +10,7 @@ const Login = () => {
   const [accounts, setAccounts] = useState([]); // handle all accounts in the database
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     axios(ACCOUNTS_API)
@@ -17,14 +18,16 @@ const Login = () => {
       .catch((error) => console.log(error.message));
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const user = accounts.find((acc) => acc.username === username);
-
-    if (user && user.password === password) {
-      nav('/home')
-    } else {
-      console.log('User not found or incorrect password')
+    try {
+      const response = await axios.post(`${ACCOUNTS_API}/login`, { username, password });
+      const token = response.data.token;
+      localStorage.setItem('token', token);
+      nav('/home');
+    } catch (error) {
+      setError('Invalid username or password');
+      setPassword('');
     }
   };
 
@@ -32,11 +35,12 @@ const Login = () => {
     <div>
       <h1>Login user</h1> <br />
       <label>username</label> <br />
-      <input type="text" onChange={(e) => setUsername(e.target.value)} /> <br />
+      <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} /> <br />
 
       <label>password</label> <br />
-      <input type="text" onChange={(e) => setPassword(e.target.value)} /> <br />
+      <input type="text" value={password} onChange={(e) => setPassword(e.target.value)} /> <br />
 
+      <small style={{color: 'red'}}>{error.length > 0 ? error:error}</small><br />
       <button onClick={(e) => handleLogin(e)}>Login</button>
       <Link to='/signup'>Signup</Link>
     </div>

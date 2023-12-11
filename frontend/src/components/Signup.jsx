@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 // Get Local API from dot env
 const ACCOUNTS_API = import.meta.env.VITE_ACCOUNTS_API
@@ -11,26 +11,34 @@ const Signup = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-      if(username === "" || password === ""){
-          alert('Fill all fields')
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (username === "" || password === "") {
+    alert('Fill all fields');
+  } else {
+    try {
+      // Fetch accounts from the server
+      const response = await axios.get(ACCOUNTS_API);
+      const existingAccounts = response.data;
+
+      // Check if the username already exists
+      const exist = existingAccounts.some((account) => account.username === username);
+
+      if (exist) {
+        alert('Username already exists')
+        setUsername('')
       } else {
-          axios.get(ACCOUNTS_API).then((response) => setAccounts(response.data)).catch(error => console.log(error.response))
-          // check if the username already exist
-          const exist = accounts.some((account) => account.username)
-          if (exist === false) {
-            alert('username already exist')
-          } else {
-            axios.post(`${ACCOUNTS_API}/signup`, {username, password})
-            .then((response) => {
-                nav('/')
-            }).catch(error => console.log(error.response))
-            setUsername('')
-            setPassword('')
-          }
+        // If the username is unique, proceed with signup
+        await axios.post(`${ACCOUNTS_API}/signup`, { username, password });
+        alert('Successfully Created')
+        nav('/'); // Redirect to the login page
       }
+    } catch (error) {
+      console.log(error.response);
+    }
   }
+};
 
 
   return (
@@ -52,6 +60,8 @@ const Signup = () => {
       <button
         onClick={(e) => handleSubmit(e)}
       >Submit</button>
+
+      <small>Already have an account? <Link to='/'>Login</Link></small>
     </div>
   )
 }
